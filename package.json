@@ -1,0 +1,24 @@
+{
+  "name": "educapost-backend",
+  "version": "1.0.0",
+  "description": "Repositório com o back-end em Node.js da plataforma EducaPost para a Tech Challenge 2",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unzerstort/educapost-backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/unzerstort/educapost-backend/issues"
+  },
+  "homepage": "https://github.com/unzerstort/educapost-backend#readme",
+  "dependencies": {
+    "express": "^5.1.0",
+    "sqlite3": "^5.1.7"
+  }
+}
