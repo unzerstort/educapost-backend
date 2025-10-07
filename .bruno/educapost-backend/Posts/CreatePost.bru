@@ -1,0 +1,20 @@
+meta {
+  name: CreatePost
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base-url}}/posts
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "title": "Minha aula X",
+    "content": "Conteúdo da aula X",
+    "author": "Prof. Maria dos Santos",
+    "categoryId": 2
+  }
+}
