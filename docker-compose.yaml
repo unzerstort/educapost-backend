@@ -1,0 +1,15 @@
+services:
+  api:
+    build: .
+    container_name: educapost-api
+    ports:
+      - "3000:3000"
+    volumes:
+      - educapost-data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    restart: unless-stopped
+
+volumes:
+  educapost-data:
