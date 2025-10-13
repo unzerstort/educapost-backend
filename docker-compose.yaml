@@ -5,7 +5,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - educapost-data:/app/data
+      - educapost-data:/usr/src/app/data
     environment:
       - NODE_ENV=production
       - PORT=3000
