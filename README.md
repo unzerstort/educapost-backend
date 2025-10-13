@@ -81,6 +81,43 @@ src/
    └─ postCrud.js
 ```
 
+## Padrões de Projeto
+
+Este projeto implementa o **padrão MVC (Model-View-Controller)** com algumas características adicionais:
+
+### 🏗️ Arquitetura MVC
+
+**Model (Modelo) - `src/persistence/sqlite.js`:**
+- Gerenciamento da conexão com SQLite
+- Implementação do padrão **Singleton** para instância única do banco
+- Criação automática de tabelas e seeds
+- Encapsulamento das operações de banco de dados
+
+**View (Visão) - Respostas JSON:**
+- Formatação de dados em JSON para a API REST
+- Tratamento de erros HTTP padronizados
+- Estrutura consistente de respostas
+
+**Controller (Controlador) - `src/routes/*.js`:**
+- Validação de dados de entrada
+- Lógica de negócio e orquestração
+- Tratamento de requisições HTTP
+- Separação por funcionalidade (Router Pattern)
+
+### 🔧 Padrões Adicionais
+
+- **Singleton Pattern**: Garante uma única instância da conexão com o banco
+- **Router Pattern**: Separação modular das rotas por responsabilidade
+- **Repository Pattern**: Abstração da camada de acesso a dados
+
+### 📋 Benefícios da Arquitetura
+
+- ✅ **Separação clara de responsabilidades**
+- ✅ **Modularidade** - fácil manutenção e extensão
+- ✅ **Testabilidade** - dependências facilmente mockáveis
+- ✅ **Reutilização** - componentes independentes
+- ✅ **Escalabilidade** - estrutura preparada para crescimento
+
 ## Banco de dados
 - SQLite file-based: `data/educapost.db` (criado automaticamente)
 - Tabelas em camelCase: `Category(id, label, order, isActive)`, `Post(id, title, content, createdAt, updatedAt, author, categoryId)`
