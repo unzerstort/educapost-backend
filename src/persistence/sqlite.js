@@ -20,7 +20,6 @@ sqlite3.verbose();
 let databaseInstance;
 
 function ensureTables(db) {
-  // Criação das tabelas com nomes e colunas em camelCase
   db.serialize(() => {
     db.run(`
       CREATE TABLE IF NOT EXISTS Category (
@@ -44,19 +43,17 @@ function ensureTables(db) {
       )
     `);
 
-    // Índices úteis
     db.run("CREATE INDEX IF NOT EXISTS idx_post_category ON Post(categoryId)");
     db.run("CREATE INDEX IF NOT EXISTS idx_post_createdat ON Post(createdAt)");
     db.run("CREATE INDEX IF NOT EXISTS idx_post_title ON Post(title)");
 
-    // Seeds iniciais
     seedIfEmpty(db);
   });
 }
 
 function seedIfEmpty(db) {
   db.get("SELECT COUNT(1) as total FROM Category", [], (err, row) => {
-    if (err) return; // silencioso
+    if (err) return;
     const total = row?.total || 0;
     if (total === 0) {
       const stmt = db.prepare(
@@ -69,7 +66,6 @@ function seedIfEmpty(db) {
       stmt.finalize();
     }
 
-    // Após garantir categorias, cria post demo se vazio
     db.get("SELECT COUNT(1) as total FROM Post", [], (perr, prow) => {
       if (perr) return;
       const ptotal = prow?.total || 0;
@@ -106,8 +102,6 @@ export function getDatabase() {
   ensureTables(databaseInstance);
   return databaseInstance;
 }
-
-// Removidos mapeadores: schema já está em camelCase
 
 export function getIsoNow() {
   return new Date().toISOString();
