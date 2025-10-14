@@ -27,7 +27,21 @@ app.get("/docs.json", (req, res) => {
     res.status(500).json({ message: "Failed to load OpenAPI spec" });
   }
 });
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(undefined, { swaggerUrl: "/docs.json" }));
+
+// Configuração do Swagger UI para funcionar no Vercel
+app.use("/docs", swaggerUi.serve);
+app.get("/docs", (req, res) => {
+  try {
+    const spec = JSON.parse(fs.readFileSync(openapiPath, "utf-8"));
+    const html = swaggerUi.generateHTML(spec, {
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: "EducaPost API Documentation"
+    });
+    res.send(html);
+  } catch (e) {
+    res.status(500).json({ message: "Failed to load Swagger UI" });
+  }
+});
 
 app.use((req, res) => {
   res.status(404).json({ message: "Not Found" });
