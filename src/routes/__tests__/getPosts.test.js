@@ -1,13 +1,13 @@
 import { describe, test, expect, beforeEach, vi } from "vitest";
-import getPostsRouter from "../getPosts.js"; // Ajuste o caminho se necessário
+import postsRouter from "../posts.router.js"; // Ajuste o caminho se necessário
 import { getDatabase } from "../../persistence/sqlite.js";
 
 vi.mock("../../persistence/sqlite.js");
 
-const getPostsHandler = getPostsRouter.stack.find(
+const getPostsHandler = postsRouter.stack.find(
   (layer) => layer.route.path === "/posts"
 ).route.stack[0].handle;
-const searchPostsHandler = getPostsRouter.stack.find(
+const searchPostsHandler = postsRouter.stack.find(
   (layer) => layer.route.path === "/posts/search"
 ).route.stack[0].handle;
 

@@ -65,6 +65,12 @@ docker compose down
 - `DELETE /posts/:id` → remove post
 - `GET /categories/:id` → obtém categoria por id
 
+## Documentação da API (Swagger)
+
+- UI interativa: acesse `http://localhost:3000/docs`
+- Especificação JSON: `http://localhost:3000/docs.json`
+- O arquivo da especificação fica em `src/openapi/openapi.json` e descreve os endpoints, parâmetros e schemas de resposta.
+
 ### Regras de validação (POST/PUT /posts)
 - `title`: mínimo 3 caracteres
 - `content`: obrigatório
@@ -86,6 +92,12 @@ curl -X POST http://localhost:3000/posts \
 ## Estrutura do projeto
 ```
 src/
+├─ controllers/
+│  ├─ categories.controller.js
+│  └─ posts.controller.js
+├─ models/
+│  ├─ categories.model.js
+│  └─ posts.model.js
 ├─ persistence/
 │  ├─ __tests__/
 │  │  └─ sqlite.test.js
@@ -96,10 +108,8 @@ src/
    │  ├─ getPost.test.js
    │  ├─ getPosts.test.js
    │  └─ postCrud.test.js
-   ├─ getPost.js
-   ├─ getPosts.js
-   ├─ getCategory.js
-   └─ postCrud.js
+   ├─ categories.router.js
+   └─ posts.router.js
 
 __tests__/
 └─ app.test.js
@@ -117,22 +127,23 @@ Este projeto implementa o **padrão MVC (Model-View-Controller)** com algumas ca
 
 ### 🏗️ Arquitetura MVC
 
-**Model (Modelo) - `src/persistence/sqlite.js`:**
-- Gerenciamento da conexão com SQLite
-- Implementação do padrão **Singleton** para instância única do banco
-- Criação automática de tabelas e seeds
-- Encapsulamento das operações de banco de dados
+**Model (Modelo) - `src/models/*.js`:**
+- Acesso aos dados (queries) e encapsulamento das operações no banco
+- Mantêm a API de dados desacoplada de controladores/rotas
+
+**Persistência - `src/persistence/sqlite.js`:**
+- Gerenciamento da conexão com SQLite (Singleton), criação de tabelas, índices e seeds
 
 **View (Visão) - Respostas JSON:**
 - Formatação de dados em JSON para a API REST
 - Tratamento de erros HTTP padronizados
 - Estrutura consistente de respostas
 
-**Controller (Controlador) - `src/routes/*.js`:**
-- Validação de dados de entrada
-- Lógica de negócio e orquestração
-- Tratamento de requisições HTTP
-- Separação por funcionalidade (Router Pattern)
+**Controller (Controlador) - `src/controllers/*.js`:**
+- Validação de entrada, regras de negócio e orquestração entre Model e View
+
+**Router (Roteador) - `src/routes/*.router.js`:**
+- Mapeia endpoints para controladores, mantendo as rotas finas
 
 ### 🔧 Padrões Adicionais
 
