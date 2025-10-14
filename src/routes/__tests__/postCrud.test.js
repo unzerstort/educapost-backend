@@ -1,16 +1,16 @@
 import { describe, test, expect, beforeEach, vi } from "vitest";
-import postCrudRouter from "../postCrud.js";
+import postsRouter from "../posts.router.js";
 import { getDatabase, getIsoNow } from "../../persistence/sqlite.js";
 
 vi.mock("../../persistence/sqlite.js");
 
-const postHandler = postCrudRouter.stack.find(
+const postHandler = postsRouter.stack.find(
   (l) => l.route.path === "/posts" && l.route.methods.post
 ).route.stack[0].handle;
-const putHandler = postCrudRouter.stack.find(
+const putHandler = postsRouter.stack.find(
   (l) => l.route.path === "/posts/:id" && l.route.methods.put
 ).route.stack[0].handle;
-const deleteHandler = postCrudRouter.stack.find(
+const deleteHandler = postsRouter.stack.find(
   (l) => l.route.path === "/posts/:id" && l.route.methods.delete
 ).route.stack[0].handle;
 

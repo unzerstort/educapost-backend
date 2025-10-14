@@ -1,8 +1,6 @@
 import express from "express";
-import getCategoryRouter from "./src/routes/getCategory.js";
-import getPostRouter from "./src/routes/getPost.js";
-import getPostsRouter from "./src/routes/getPosts.js";
-import postCrudRouter from "./src/routes/postCrud.js";
+import categoriesRouter from "./src/routes/categories.router.js";
+import postsRouter from "./src/routes/posts.router.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,10 +11,8 @@ app.get("/", (req, res) => {
   res.json({ message: "EducaPost Backend API" });
 });
 
-app.use(getPostsRouter);
-app.use(getPostRouter);
-app.use(postCrudRouter);
-app.use(getCategoryRouter);
+app.use(postsRouter);
+app.use(categoriesRouter);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Not Found" });

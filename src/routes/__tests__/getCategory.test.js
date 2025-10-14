@@ -1,10 +1,12 @@
 import { describe, test, expect, beforeEach, vi } from "vitest";
-import getCategoryRouter from "../getCategory.js";
+import categoriesRouter from "../categories.router.js";
 import { getDatabase } from "../../persistence/sqlite.js";
 
 vi.mock("../../persistence/sqlite.js");
 
-const getCategoryHandler = getCategoryRouter.stack[0].route.stack[0].handle;
+const getCategoryHandler = categoriesRouter.stack.find(
+  (l) => l.route.path === "/categories/:id" && l.route.methods.get
+).route.stack[0].handle;
 
 describe("GET /categories/:id", () => {
   let mockReq;
