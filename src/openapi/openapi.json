@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "description": "Documentação da API do EducaPost"
   },
-  "servers": [{ "url": "http://localhost:3000" }],
+  "servers": [{ "url": "/" }],
   "paths": {
     "/": {
       "get": {
