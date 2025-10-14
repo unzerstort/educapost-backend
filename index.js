@@ -25,7 +25,7 @@ app.use((req, res) => {
 // Só inicia o servidor se não estivermos em modo de teste
 /* v8 ignore next 3 */
 if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port ${PORT}`);
   });
 }

@@ -6,7 +6,7 @@
 
 # Want to help us make this template better? Share your feedback here: https://forms.gle/ybq9Krt8jtBL3iCk7
 
-ARG NODE_VERSION=22.19.0
+ARG NODE_VERSION=22.20.0
 
 FROM node:${NODE_VERSION}-alpine
 
@@ -25,11 +25,14 @@ RUN --mount=type=bind,source=package.json,target=package.json \
     --mount=type=cache,target=/root/.npm \
     npm ci --omit=dev
 
-# Run the application as a non-root user.
-USER node
-
 # Copy the rest of the source files into the image.
 COPY . .
+
+# Create data directory and set proper permissions
+RUN mkdir -p /usr/src/app/data && chown -R node:node /usr/src/app/data
+
+# Run the application as a non-root user.
+USER node
 
 # Expose the port that the application listens on.
 EXPOSE 3000

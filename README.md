@@ -20,6 +20,20 @@ npm run dev
 - Banco de dados SQLite será criado automaticamente em `data/educapost.db`.
 - Seed automático: categorias iniciais e um post de boas-vindas.
 
+## Testes
+```bash
+# Executar todos os testes
+npm test
+
+# Executar testes com cobertura
+npm run test:coverage
+```
+
+- **Testes unitários**: Cada módulo tem seus testes específicos
+- **Testes de integração**: Testes end-to-end da API
+- **Cobertura**: Relatório de cobertura de código disponível
+- **Framework**: Vitest com Supertest para testes de API
+
 ## Docker
 Build local da imagem:
 ```bash
@@ -73,12 +87,28 @@ curl -X POST http://localhost:3000/posts \
 ```
 src/
 ├─ persistence/
+│  ├─ __tests__/
+│  │  └─ sqlite.test.js
 │  └─ sqlite.js
 └─ routes/
+   ├─ __tests__/
+   │  ├─ getCategory.test.js
+   │  ├─ getPost.test.js
+   │  ├─ getPosts.test.js
+   │  └─ postCrud.test.js
    ├─ getPost.js
    ├─ getPosts.js
    ├─ getCategory.js
    └─ postCrud.js
+
+__tests__/
+└─ app.test.js
+
+# Arquivos de configuração
+├─ vitest.config.js
+├─ package.json
+├─ Dockerfile
+└─ docker-compose.yaml
 ```
 
 ## Padrões de Projeto
@@ -122,3 +152,53 @@ Este projeto implementa o **padrão MVC (Model-View-Controller)** com algumas ca
 - SQLite file-based: `data/educapost.db` (criado automaticamente)
 - Tabelas em camelCase: `Category(id, label, order, isActive)`, `Post(id, title, content, createdAt, updatedAt, author, categoryId)`
 - Seeds automáticos executados no primeiro start caso as tabelas estejam vazias
+
+## Experiências e Desafios
+
+### 🚀 **Desafios Técnicos Enfrentados**
+
+**Estruturação Modular das Rotas:**
+- **Desafio**: Organizar endpoints de forma escalável e manutenível
+- **Solução**: Separação por responsabilidade usando Router Pattern
+- **Aprendizado**: Benefícios da modularização para projetos em crescimento
+
+### 🏗️ **Decisões Arquiteturais**
+
+**Escolha do Padrão MVC:**
+- **Motivação**: Necessidade de separação clara entre lógica de negócio, dados e apresentação
+- **Benefício**: Facilita manutenção e testes automatizados
+- **Resultado**: Código mais organizado e testável
+
+**SQLite como Banco de Dados:**
+- **Motivação**: Simplicidade para desenvolvimento e deploy, zero configuração necessária
+- **Vantagem**: Arquivo único, ideal para protótipos e desenvolvimento inicial
+- **Limitação conhecida**: Apenas uma operação de escrita por vez (limitações de concorrência)
+- **Plano futuro**: Migração para PostgreSQL quando o projeto escalar e precisar de maior concorrência
+
+**Estrutura de Testes:**
+- **Abordagem**: Testes unitários com Vitest e mocks para dependências
+- **Benefício**: Cobertura de código e confiança nas funcionalidades
+- **Desafio**: Mocking de operações de banco de dados
+
+### 📚 **Lições Aprendidas**
+
+**1. Importância da Documentação:**
+- Documentar padrões de projeto facilita manutenção futura
+- README detalhado acelera onboarding de novos desenvolvedores
+
+**2. Testabilidade como Prioridade:**
+- Estrutura modular facilita criação de testes
+- Mocks bem implementados garantem isolamento de testes
+
+**3. Estratégia de Escalabilidade:**
+- SQLite escolhido conscientemente para desenvolvimento rápido e simplicidade
+- Limitação de concorrência conhecida desde o início (apenas 1 escrita por vez)
+- **Arquitetura MVC facilita migração futura para PostgreSQL quando necessário**
+- Foco em "fazer funcionar primeiro, otimizar depois"
+
+### 🔄 **Melhorias Futuras Identificadas**
+
+- **Migração para PostgreSQL**: Quando o projeto escalar e precisar de maior concorrência
+- **Middleware**: Adicionar middleware para autenticação e logging
+- **Migrations**: Sistema de migração de banco mais robusto
+- **Rate Limiting**: Implementar limitação de requisições para produção
