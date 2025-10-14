@@ -65,6 +65,12 @@ docker compose down
 - `DELETE /posts/:id` → remove post
 - `GET /categories/:id` → obtém categoria por id
 
+## Documentação da API (Swagger)
+
+- UI interativa: acesse `http://localhost:3000/docs`
+- Especificação JSON: `http://localhost:3000/docs.json`
+- O arquivo da especificação fica em `src/openapi/openapi.json` e descreve os endpoints, parâmetros e schemas de resposta.
+
 ### Regras de validação (POST/PUT /posts)
 - `title`: mínimo 3 caracteres
 - `content`: obrigatório

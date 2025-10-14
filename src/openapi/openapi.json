@@ -1,0 +1,192 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "EducaPost API",
+    "version": "1.0.0",
+    "description": "Documentação da API do EducaPost"
+  },
+  "servers": [{ "url": "http://localhost:3000" }],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Health/Welcome",
+        "responses": {
+          "200": {
+            "description": "Status OK",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Message" } } }
+          }
+        }
+      }
+    },
+    "/posts": {
+      "get": {
+        "summary": "Listar posts",
+        "parameters": [
+          { "in": "query", "name": "page", "schema": { "type": "integer", "minimum": 1 } },
+          { "in": "query", "name": "limit", "schema": { "type": "integer", "minimum": 1, "maximum": 100 } },
+          { "in": "query", "name": "sort", "schema": { "type": "string", "enum": ["createdAt", "updatedAt", "title"] } },
+          { "in": "query", "name": "order", "schema": { "type": "string", "enum": ["asc", "desc"] } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de posts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": { "type": "integer" },
+                    "items": { "type": "array", "items": { "$ref": "#/components/schemas/Post" } }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "$ref": "#/components/responses/DatabaseError" }
+        }
+      },
+      "post": {
+        "summary": "Criar post",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PostCreate" } } }
+        },
+        "responses": {
+          "201": { "description": "Criado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Post" } } } },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/DatabaseError" }
+        }
+      }
+    },
+    "/posts/search": {
+      "get": {
+        "summary": "Buscar posts",
+        "parameters": [
+          { "in": "query", "name": "q", "required": true, "schema": { "type": "string" } },
+          { "in": "query", "name": "page", "schema": { "type": "integer", "minimum": 1 } },
+          { "in": "query", "name": "limit", "schema": { "type": "integer", "minimum": 1, "maximum": 100 } },
+          { "in": "query", "name": "sort", "schema": { "type": "string", "enum": ["createdAt", "updatedAt", "title"] } },
+          { "in": "query", "name": "order", "schema": { "type": "string", "enum": ["asc", "desc"] } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultados da busca",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": { "type": "integer" },
+                    "items": { "type": "array", "items": { "$ref": "#/components/schemas/Post" } }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/DatabaseError" }
+        }
+      }
+    },
+    "/posts/{id}": {
+      "get": {
+        "summary": "Obter post por id",
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer", "minimum": 1 } }],
+        "responses": {
+          "200": { "description": "Post encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Post" } } } },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/DatabaseError" }
+        }
+      },
+      "put": {
+        "summary": "Atualizar post",
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer", "minimum": 1 } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PostCreate" } } }
+        },
+        "responses": {
+          "200": { "description": "Atualizado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Post" } } } },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/DatabaseError" }
+        }
+      },
+      "delete": {
+        "summary": "Remover post",
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer", "minimum": 1 } }],
+        "responses": {
+          "204": { "description": "Removido" },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/DatabaseError" }
+        }
+      }
+    },
+    "/categories/{id}": {
+      "get": {
+        "summary": "Obter categoria por id",
+        "parameters": [{ "in": "path", "name": "id", "required": true, "schema": { "type": "integer", "minimum": 1 } }],
+        "responses": {
+          "200": { "description": "Categoria encontrada", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Category" } } } },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "500": { "$ref": "#/components/responses/DatabaseError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Message": {
+        "type": "object",
+        "properties": { "message": { "type": "string" } }
+      },
+      "Post": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "content": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "author": { "type": "string" },
+          "categoryId": { "type": ["integer", "null"] }
+        }
+      },
+      "PostCreate": {
+        "type": "object",
+        "required": ["title", "content", "author"],
+        "properties": {
+          "title": { "type": "string", "minLength": 3 },
+          "content": { "type": "string" },
+          "author": { "type": "string", "minLength": 2 },
+          "categoryId": { "type": ["integer", "null"], "minimum": 1 }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "label": { "type": "string" },
+          "order": { "type": "integer" },
+          "isActive": { "type": "integer", "enum": [0, 1] }
+        }
+      }
+    },
+    "responses": {
+      "ValidationError": {
+        "description": "Erro de validação"
+      },
+      "NotFound": {
+        "description": "Não encontrado"
+      },
+      "DatabaseError": {
+        "description": "Erro no banco de dados"
+      }
+    }
+  }
+}
+
+
