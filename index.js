@@ -4,9 +4,15 @@ import postsRouter from "./src/routes/posts.router.js";
 import swaggerUi from "swagger-ui-express";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Configuração para servir arquivos estáticos do Swagger UI no Vercel
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const swaggerDistPath = path.join(__dirname, "node_modules", "swagger-ui-dist");
 
 app.use(express.json());
 
@@ -29,19 +35,18 @@ app.get("/docs.json", (req, res) => {
 });
 
 // Configuração do Swagger UI para funcionar no Vercel
-app.use("/docs", swaggerUi.serve);
-app.get("/docs", (req, res) => {
-  try {
-    const spec = JSON.parse(fs.readFileSync(openapiPath, "utf-8"));
-    const html = swaggerUi.generateHTML(spec, {
-      customCss: '.swagger-ui .topbar { display: none }',
-      customSiteTitle: "EducaPost API Documentation"
-    });
-    res.send(html);
-  } catch (e) {
-    res.status(500).json({ message: "Failed to load Swagger UI" });
-  }
-});
+app.use(
+  "/docs",
+  express.static(swaggerDistPath, { index: false }),
+  swaggerUi.serve,
+  swaggerUi.setup(JSON.parse(fs.readFileSync(openapiPath, "utf-8")), {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: "EducaPost API Documentation",
+    swaggerOptions: {
+      persistAuthorization: true
+    }
+  })
+);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Not Found" });
