@@ -1,4 +1,4 @@
-import { getIsoNow } from "../persistence/sqlite.js";
+import { getIsoNow } from "../db/index.js";
 import {
   countAllPosts,
   listPosts,
@@ -27,116 +27,160 @@ function validatePostPayload(body) {
   const errors = [];
   const title = typeof body.title === "string" ? body.title.trim() : "";
   const content = typeof body.content === "string" ? body.content.trim() : "";
-  const author = typeof body.author === "string" ? body.author.trim() : "";
   const categoryId = body.categoryId == null ? null : Number(body.categoryId);
 
   if (!title || title.length < 3) errors.push("title must be at least 3 characters");
   if (!content) errors.push("content is required");
-  if (!author || author.length < 2) errors.push("author must be at least 2 characters");
   if (categoryId !== null && (!Number.isInteger(categoryId) || categoryId <= 0)) {
     errors.push("categoryId must be a positive integer when provided");
   }
 
-  return { errors, title, content, author, categoryId };
+  return { errors, title, content, categoryId };
 }
 
-export function getPosts(req, res) {
-  const { limit, offset, sort, order } = parsePagination(req.query);
-  countAllPosts((countErr, total) => {
-    if (countErr) return res.status(500).json({ message: "Database error" });
-    listPosts({ limit, offset, sort, order }, (listErr, rows) => {
-      if (listErr) return res.status(500).json({ message: "Database error" });
-      return res.json({ total, items: rows });
-    });
-  });
-}
-
-export function searchPostsController(req, res) {
-  const q = String(req.query.q || "").trim();
-  if (!q) return res.status(400).json({ message: "Query param q is required" });
-  const { limit, offset, sort, order } = parsePagination(req.query);
-  const like = `%${q}%`;
-  countPostsByQuery({ like }, (countErr, total) => {
-    if (countErr) return res.status(500).json({ message: "Database error" });
-    searchPosts({ like, limit, offset, sort, order }, (listErr, rows) => {
-      if (listErr) return res.status(500).json({ message: "Database error" });
-      return res.json({ total, items: rows });
-    });
-  });
-}
-
-export function getPost(req, res) {
-  const id = parseInt(req.params.id, 10);
-  if (Number.isNaN(id) || id <= 0) return res.status(400).json({ message: "Invalid id" });
-  getPostById(id, (err, row) => {
-    if (err) return res.status(500).json({ message: "Database error" });
-    if (!row) return res.status(404).json({ message: "Post not found" });
-    return res.json(row);
-  });
-}
-
-export function createPost(req, res) {
-  const { errors, title, content, author, categoryId } = validatePostPayload(req.body || {});
-  if (errors.length) return res.status(400).json({ message: "Validation failed", errors });
-
-  if (categoryId == null) {
-    const now = getIsoNow();
-    insertPost({ title, content, createdAt: now, updatedAt: now, author, categoryId }, (err, id) => {
-      if (err) return res.status(500).json({ message: "Database error" });
-      return res.status(201).json({ id, title, content, createdAt: now, updatedAt: now, author, categoryId });
-    });
-    return;
+export async function getPosts(req, res) {
+  try {
+    const { limit, offset, sort, order } = parsePagination(req.query);
+    const total = await countAllPosts();
+    const rows = await listPosts({ limit, offset, sort, order });
+    return res.json({ total, items: rows });
+  } catch {
+    return res.status(500).json({ message: "Database error" });
   }
+}
 
-  existsActiveCategoryById(categoryId, (catErr, ok) => {
-    if (catErr) return res.status(500).json({ message: "Database error" });
-    if (!ok) return res.status(400).json({ message: "categoryId must reference an active category" });
+export async function searchPostsController(req, res) {
+  try {
+    const q = String(req.query.q || "").trim();
+    if (!q) {
+      return res.status(400).json({ message: "Query param q is required" });
+    }
+    const { limit, offset, sort, order } = parsePagination(req.query);
+    const like = q;
+    const total = await countPostsByQuery({ like });
+    const rows = await searchPosts({ like, limit, offset, sort, order });
+    return res.json({ total, items: rows });
+  } catch {
+    return res.status(500).json({ message: "Database error" });
+  }
+}
+
+export async function getPost(req, res) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (Number.isNaN(id) || id <= 0) {
+      return res.status(400).json({ message: "Invalid id" });
+    }
+    const row = await getPostById(id);
+    if (!row) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+    return res.json(row);
+  } catch {
+    return res.status(500).json({ message: "Database error" });
+  }
+}
+
+export async function createPost(req, res) {
+  try {
+    const { errors, title, content, categoryId } = validatePostPayload(
+      req.body || {}
+    );
+    if (errors.length) {
+      return res.status(400).json({ message: "Validation failed", errors });
+    }
+
+    if (categoryId != null) {
+      const ok = await existsActiveCategoryById(categoryId);
+      if (!ok) {
+        return res
+          .status(400)
+          .json({ message: "categoryId must reference an active category" });
+      }
+    }
+
     const now = getIsoNow();
-    insertPost({ title, content, createdAt: now, updatedAt: now, author, categoryId }, (err, id) => {
-      if (err) return res.status(500).json({ message: "Database error" });
-      return res.status(201).json({ id, title, content, createdAt: now, updatedAt: now, author, categoryId });
+    const id = await insertPost({
+      title,
+      content,
+      createdAt: now,
+      updatedAt: now,
+      categoryId,
+      teacherId: req.teacher?.id ?? null,
     });
-  });
+    return res.status(201).json({
+      id,
+      title,
+      content,
+      createdAt: now,
+      updatedAt: now,
+      author: req.teacher?.name ?? null,
+      categoryId,
+      teacherId: req.teacher?.id ?? null,
+    });
+  } catch {
+    return res.status(500).json({ message: "Database error" });
+  }
 }
 
-export function updatePostController(req, res) {
-  const id = parseInt(req.params.id, 10);
-  if (Number.isNaN(id) || id <= 0) return res.status(400).json({ message: "Invalid id" });
-  const { errors, title, content, author, categoryId } = validatePostPayload(req.body || {});
-  if (errors.length) return res.status(400).json({ message: "Validation failed", errors });
-
-  existsPostById(id, (getErr, exists) => {
-    if (getErr) return res.status(500).json({ message: "Database error" });
-    if (!exists) return res.status(404).json({ message: "Post not found" });
-
-    const proceed = () => {
-      const updatedAt = getIsoNow();
-      updatePost({ id, title, content, updatedAt, author, categoryId }, (updErr) => {
-        if (updErr) return res.status(500).json({ message: "Database error" });
-        return res.json({ id, title, content, author, categoryId, updatedAt });
-      });
-    };
-
-    if (categoryId == null) return proceed();
-    existsActiveCategoryById(categoryId, (catErr, ok) => {
-      if (catErr) return res.status(500).json({ message: "Database error" });
-      if (!ok) return res.status(400).json({ message: "categoryId must reference an active category" });
-      proceed();
+export async function updatePostController(req, res) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (Number.isNaN(id) || id <= 0) {
+      return res.status(400).json({ message: "Invalid id" });
+    }
+    const postRow = await getPostById(id);
+    if (!postRow) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+    if (req.teacher && postRow.teacherId !== req.teacher.id) {
+      return res.status(403).json({ message: "Only the post owner can edit it" });
+    }
+    const { errors, title, content, categoryId } = validatePostPayload(
+      req.body || {}
+    );
+    if (errors.length) {
+      return res.status(400).json({ message: "Validation failed", errors });
+    }
+    if (categoryId != null) {
+      const ok = await existsActiveCategoryById(categoryId);
+      if (!ok) {
+        return res
+          .status(400)
+          .json({ message: "categoryId must reference an active category" });
+      }
+    }
+    const updatedAt = getIsoNow();
+    await updatePost({ id, title, content, updatedAt, categoryId });
+    return res.json({
+      id,
+      title,
+      content,
+      author: req.teacher?.name ?? null,
+      categoryId,
+      updatedAt,
     });
-  });
+  } catch {
+    return res.status(500).json({ message: "Database error" });
+  }
 }
 
-export function deletePost(req, res) {
-  const id = parseInt(req.params.id, 10);
-  if (Number.isNaN(id) || id <= 0) return res.status(400).json({ message: "Invalid id" });
-  existsPostById(id, (getErr, exists) => {
-    if (getErr) return res.status(500).json({ message: "Database error" });
-    if (!exists) return res.status(404).json({ message: "Post not found" });
-    deletePostById(id, (delErr) => {
-      if (delErr) return res.status(500).json({ message: "Database error" });
-      return res.status(204).send();
-    });
-  });
+export async function deletePost(req, res) {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (Number.isNaN(id) || id <= 0) {
+      return res.status(400).json({ message: "Invalid id" });
+    }
+    const postRow = await getPostById(id);
+    if (!postRow) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+    if (req.teacher && postRow.teacherId !== req.teacher.id) {
+      return res.status(403).json({ message: "Only the post owner can delete it" });
+    }
+    await deletePostById(id);
+    return res.status(204).send();
+  } catch {
+    return res.status(500).json({ message: "Database error" });
+  }
 }
-
-

@@ -9,7 +9,30 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - DATABASE_URL=postgresql://educapost:educapost@postgres:5432/educapost
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: educapost-postgres
+    environment:
+      - POSTGRES_USER=educapost
+      - POSTGRES_PASSWORD=educapost
+      - POSTGRES_DB=educapost
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U educapost -d educapost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
 volumes:
   educapost-data:
+  postgres-data:

@@ -1,4 +1,5 @@
 import express from "express";
+import { requireAuth, requireTeacher } from "../auth/middleware.js";
 import {
   getPosts,
   searchPostsController,
@@ -10,13 +11,11 @@ import {
 
 const router = express.Router();
 
-router.get('/posts', getPosts);
-router.get('/posts/search', searchPostsController);
-router.get('/posts/:id', getPost);
-router.post('/posts', createPost);
-router.put('/posts/:id', updatePostController);
-router.delete('/posts/:id', deletePost);
+router.get("/posts", requireAuth, getPosts);
+router.get("/posts/search", requireAuth, searchPostsController);
+router.get("/posts/:id", requireAuth, getPost);
+router.post("/posts", requireTeacher, createPost);
+router.put("/posts/:id", requireTeacher, updatePostController);
+router.delete("/posts/:id", requireTeacher, deletePost);
 
 export default router;
-
-
