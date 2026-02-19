@@ -124,6 +124,48 @@
         }
       }
     },
+    "/auth/login": {
+      "post": {
+        "summary": "Login (professor ou aluno)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password", "role"],
+                "properties": {
+                  "email": { "type": "string" },
+                  "password": { "type": "string" },
+                  "role": { "type": "string", "enum": ["teacher", "student"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token e dados do usuário",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": { "type": "string" },
+                    "role": { "type": "string" },
+                    "id": { "type": "integer" },
+                    "name": { "type": "string" },
+                    "email": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
     "/categories/{id}": {
       "get": {
         "summary": "Obter categoria por id",
@@ -152,16 +194,16 @@
           "createdAt": { "type": "string", "format": "date-time" },
           "updatedAt": { "type": "string", "format": "date-time" },
           "author": { "type": "string" },
-          "categoryId": { "type": ["integer", "null"] }
+          "categoryId": { "type": ["integer", "null"] },
+          "teacherId": { "type": ["integer", "null"] }
         }
       },
       "PostCreate": {
         "type": "object",
-        "required": ["title", "content", "author"],
+        "required": ["title", "content"],
         "properties": {
           "title": { "type": "string", "minLength": 3 },
           "content": { "type": "string" },
-          "author": { "type": "string", "minLength": 2 },
           "categoryId": { "type": ["integer", "null"], "minimum": 1 }
         }
       },
@@ -184,6 +226,19 @@
       },
       "DatabaseError": {
         "description": "Erro no banco de dados"
+      },
+      "Unauthorized": {
+        "description": "Token ausente ou inválido"
+      },
+      "Forbidden": {
+        "description": "Sem permissão"
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       }
     }
   }

@@ -1,19 +1,20 @@
-import { getDatabase } from "../persistence/sqlite.js";
+import { and, eq } from "drizzle-orm";
+import { getDb } from "../db/index.js";
+import { category } from "../db/schema.js";
 
-export function getCategoryById(id, callback) {
-  const db = getDatabase();
-  db.get("SELECT * FROM Category WHERE id = ?", [id], (err, row) => {
-    if (err) return callback(err);
-    callback(null, row || null);
-  });
+export async function getCategoryById(id) {
+  const db = getDb();
+  if (!db) throw new Error("Database not configured");
+  const rows = await db.select().from(category).where(eq(category.id, id));
+  return rows[0] ?? null;
 }
 
-export function existsActiveCategoryById(id, callback) {
-  const db = getDatabase();
-  db.get("SELECT id FROM Category WHERE id = ? AND isActive = 1", [id], (err, row) => {
-    if (err) return callback(err);
-    callback(null, Boolean(row));
-  });
+export async function existsActiveCategoryById(id) {
+  const db = getDb();
+  if (!db) throw new Error("Database not configured");
+  const rows = await db
+    .select({ id: category.id })
+    .from(category)
+    .where(and(eq(category.id, id), eq(category.isActive, 1)));
+  return rows.length > 0;
 }
-
-

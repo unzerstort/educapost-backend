@@ -10,7 +10,7 @@ export default defineConfig({
       branches: 80,
       include: ["src/**/*.js"],
 
-      exclude: ["src/persistence/sqlite.js", "__tests__/"],
+      exclude: ["src/db/index.js", "__tests__/"],
     },
   },
 });

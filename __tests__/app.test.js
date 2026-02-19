@@ -1,20 +1,27 @@
 import { describe, test, expect, vi, beforeEach } from "vitest";
 import request from "supertest";
 import app from "../index.js";
-import { getDatabase } from "../src/persistence/sqlite.js";
+import * as postsModel from "../src/models/posts.model.js";
 
-vi.mock("../src/persistence/sqlite.js");
+vi.mock("../src/models/posts.model.js");
+vi.mock("../src/models/categories.model.js");
+vi.mock("../src/auth/middleware.js", () => ({
+  requireAuth: (req, res, next) => {
+    req.teacher = { id: 1 };
+    req.auth = { role: "teacher", id: 1 };
+    next();
+  },
+  requireTeacher: (req, res, next) => {
+    req.teacher = { id: 1 };
+    req.auth = { role: "teacher", id: 1 };
+    next();
+  },
+  requireStudent: (req, res, next) => next(),
+}));
 
 describe("API End-to-End Tests", () => {
-  const mockDb = {
-    get: vi.fn(),
-    all: vi.fn(),
-    run: vi.fn(),
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
-    getDatabase.mockReturnValue(mockDb);
   });
 
   test("GET / deve retornar a mensagem de boas-vindas", async () => {
@@ -26,11 +33,9 @@ describe("API End-to-End Tests", () => {
     expect(response.body).toEqual({ message: "EducaPost Backend API" });
   });
 
-  test("GET /posts/1 deve retornar um post (provando que o router está conectado)", async () => {
+  test("GET /posts/1 deve retornar um post (com auth mockado)", async () => {
     const mockPost = { id: 1, title: "Post Teste" };
-    mockDb.get.mockImplementation((sql, params, callback) => {
-      callback(null, mockPost);
-    });
+    postsModel.getPostById.mockResolvedValue(mockPost);
 
     const response = await request(app).get("/posts/1").expect(200);
     expect(response.body).toEqual(mockPost);

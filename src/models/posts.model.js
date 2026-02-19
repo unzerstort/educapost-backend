@@ -1,80 +1,158 @@
-import { getDatabase } from "../persistence/sqlite.js";
+import { asc, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { getDb } from "../db/index.js";
+import { post, teacher } from "../db/schema.js";
 
-export function countAllPosts(callback) {
-  const db = getDatabase();
-  db.get("SELECT COUNT(1) as total FROM Post", [], (err, row) => {
-    if (err) return callback(err);
-    callback(null, row?.total || 0);
-  });
+const SORT_COLUMNS = {
+  createdAt: post.createdAt,
+  updatedAt: post.updatedAt,
+  title: post.title,
+};
+
+function getOrderBy(sort, order) {
+  const col = SORT_COLUMNS[sort] ?? post.createdAt;
+  return order === "ASC" ? asc(col) : desc(col);
 }
 
-export function listPosts({ limit, offset, sort, order }, callback) {
-  const db = getDatabase();
-  const sql = `SELECT * FROM Post ORDER BY ${sort} ${order} LIMIT ? OFFSET ?`;
-  db.all(sql, [limit, offset], (err, rows) => {
-    if (err) return callback(err);
-    callback(null, rows || []);
-  });
+export async function countAllPosts() {
+  const db = getDb();
+  if (!db) throw new Error("Database not configured");
+  const rows = await db.select({ count: sql`count(*)::int` }).from(post);
+  return rows[0]?.count ?? 0;
 }
 
-export function countPostsByQuery({ like }, callback) {
-  const db = getDatabase();
-  const sql = "SELECT COUNT(1) as total FROM Post WHERE title LIKE ? OR content LIKE ?";
-  db.get(sql, [like, like], (err, row) => {
-    if (err) return callback(err);
-    callback(null, row?.total || 0);
-  });
+export async function listPosts({ limit, offset, sort, order }) {
+  const db = getDb();
+  if (!db) throw new Error("Database not configured");
+  const rows = await db
+    .select({
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
+      categoryId: post.categoryId,
+      teacherId: post.teacherId,
+      author: teacher.name,
+    })
+    .from(post)
+    .leftJoin(teacher, eq(post.teacherId, teacher.id))
+    .orderBy(getOrderBy(sort, order))
+    .limit(limit)
+    .offset(offset);
+  return rows;
 }
 
-export function searchPosts({ like, limit, offset, sort, order }, callback) {
-  const db = getDatabase();
-  const sql = `SELECT * FROM Post WHERE title LIKE ? OR content LIKE ? ORDER BY ${sort} ${order} LIMIT ? OFFSET ?`;
-  db.all(sql, [like, like, limit, offset], (err, rows) => {
-    if (err) return callback(err);
-    callback(null, rows || []);
-  });
+export async function countPostsByQuery({ like }) {
+  const db = getDb();
+  if (!db) throw new Error("Database not configured");
+  const pattern = `%${like}%`;
+  const rows = await db
+    .select({ count: sql`count(*)::int` })
+    .from(post)
+    .where(or(ilike(post.title, pattern), ilike(post.content, pattern)));
+  return rows[0]?.count ?? 0;
 }
 
-export function getPostById(id, callback) {
-  const db = getDatabase();
-  db.get("SELECT * FROM Post WHERE id = ?", [id], (err, row) => {
-    if (err) return callback(err);
-    callback(null, row || null);
-  });
+export async function searchPosts({ like, limit, offset, sort, order }) {
+  const db = getDb();
+  if (!db) throw new Error("Database not configured");
+  const pattern = `%${like}%`;
+  const rows = await db
+    .select({
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
+      categoryId: post.categoryId,
+      teacherId: post.teacherId,
+      author: teacher.name,
+    })
+    .from(post)
+    .leftJoin(teacher, eq(post.teacherId, teacher.id))
+    .where(or(ilike(post.title, pattern), ilike(post.content, pattern)))
+    .orderBy(getOrderBy(sort, order))
+    .limit(limit)
+    .offset(offset);
+  return rows;
 }
 
-export function insertPost({ title, content, createdAt, updatedAt, author, categoryId }, callback) {
-  const db = getDatabase();
-  const sql = "INSERT INTO Post (title, content, createdAt, updatedAt, author, categoryId) VALUES (?, ?, ?, ?, ?, ?)";
-  db.run(sql, [title, content, createdAt, updatedAt, author, categoryId], function (err) {
-    if (err) return callback(err);
-    callback(null, this.lastID);
-  });
+export async function getPostById(id) {
+  const db = getDb();
+  if (!db) throw new Error("Database not configured");
+  const rows = await db
+    .select({
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
+      categoryId: post.categoryId,
+      teacherId: post.teacherId,
+      author: teacher.name,
+    })
+    .from(post)
+    .leftJoin(teacher, eq(post.teacherId, teacher.id))
+    .where(eq(post.id, id));
+  return rows[0] ?? null;
 }
 
-export function updatePost({ id, title, content, updatedAt, author, categoryId }, callback) {
-  const db = getDatabase();
-  const sql = "UPDATE Post SET title = ?, content = ?, updatedAt = ?, author = ?, categoryId = ? WHERE id = ?";
-  db.run(sql, [title, content, updatedAt, author, categoryId, id], (err) => {
-    if (err) return callback(err);
-    callback(null);
-  });
+export async function insertPost({
+  title,
+  content,
+  createdAt,
+  updatedAt,
+  categoryId,
+  teacherId,
+}) {
+  const db = getDb();
+  if (!db) throw new Error("Database not configured");
+  const dateCreated = createdAt instanceof Date ? createdAt : new Date(createdAt);
+  const dateUpdated = updatedAt instanceof Date ? updatedAt : new Date(updatedAt);
+  const rows = await db
+    .insert(post)
+    .values({
+      title,
+      content,
+      createdAt: dateCreated,
+      updatedAt: dateUpdated,
+      categoryId,
+      teacherId: teacherId ?? null,
+    })
+    .returning({ id: post.id });
+  return rows[0]?.id;
 }
 
-export function deletePostById(id, callback) {
-  const db = getDatabase();
-  db.run("DELETE FROM Post WHERE id = ?", [id], (err) => {
-    if (err) return callback(err);
-    callback(null);
-  });
+export async function updatePost({
+  id,
+  title,
+  content,
+  updatedAt,
+  categoryId,
+  teacherId,
+}) {
+  const db = getDb();
+  if (!db) throw new Error("Database not configured");
+  const dateUpdated = updatedAt instanceof Date ? updatedAt : new Date(updatedAt);
+  const set = {
+    title,
+    content,
+    updatedAt: dateUpdated,
+    categoryId,
+  };
+  if (teacherId !== undefined) set.teacherId = teacherId;
+  await db.update(post).set(set).where(eq(post.id, id));
 }
 
-export function existsPostById(id, callback) {
-  const db = getDatabase();
-  db.get("SELECT id FROM Post WHERE id = ?", [id], (err, row) => {
-    if (err) return callback(err);
-    callback(null, Boolean(row));
-  });
+export async function deletePostById(id) {
+  const db = getDb();
+  if (!db) throw new Error("Database not configured");
+  await db.delete(post).where(eq(post.id, id));
 }
 
-
+export async function existsPostById(id) {
+  const db = getDb();
+  if (!db) throw new Error("Database not configured");
+  const rows = await db.select({ id: post.id }).from(post).where(eq(post.id, id));
+  return rows.length > 0;
+}
