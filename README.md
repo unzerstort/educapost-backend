@@ -156,6 +156,7 @@ docker compose down
 | POST | `/posts` | Bearer (teacher) | Criar post |
 | PUT | `/posts/:id` | Bearer (teacher, dono) | Atualizar post |
 | DELETE | `/posts/:id` | Bearer (teacher, dono) | Remover post |
+| GET | `/categories` | Não | Lista categorias ativas (para consumo no front) |
 | GET | `/categories/:id` | Não | Categoria por id |
 | GET/POST/PUT/DELETE | `/teachers`, `/teachers/me`, `/teachers/:id` | Bearer (teacher) | CRUD professores |
 | GET/POST/PUT/DELETE | `/students`, `/students/me`, `/students/:id` | Bearer (teacher para CRUD; student para me) | CRUD alunos |

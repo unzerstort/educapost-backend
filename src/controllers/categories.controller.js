@@ -1,4 +1,13 @@
-import { getCategoryById } from "../models/categories.model.js";
+import { getActiveCategories, getCategoryById } from "../models/categories.model.js";
+
+export async function listCategories(req, res) {
+  try {
+    const rows = await getActiveCategories();
+    return res.json(rows);
+  } catch {
+    return res.status(500).json({ message: "Database error" });
+  }
+}
 
 export async function getCategory(req, res) {
   try {
